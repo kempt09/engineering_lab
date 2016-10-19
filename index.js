@@ -24,13 +24,10 @@ $('document').ready(()=>{
       const ctx = canvas.getContext('2d');
       canvas.width = 1500;
       canvas.height = 1500;
-      let height = view.get('height');
-      let width = view.get('box_width');
-      let length = view.get('box_length');
       let animation = new Animation(canvas, view.get('gravity'));
-      animation.addFrame(new Rectangle((750 - width), width, length, width));
+      animation.addFrame(new Shape((canvas.width / 2), 50));
       let Run = function() {
-        animation.update(16);
+        animation.update(60);
         animation.draw(ctx);
         requestAnimFrame(Run);
       };
@@ -49,7 +46,7 @@ $('document').ready(()=>{
       view.clearProperties();
       const ctx = canvas.getContext('2d');
       let animation = new Animation(canvas);
-      animation.addFrame(new Rectangle());
+      animation.addFrame(new Shape());
       let Run = function() {
         animation.draw(ctx);
         requestAnimFrame(Run);
@@ -63,23 +60,17 @@ $('document').ready(()=>{
   let view = {
     height: null,
     gravity: null,
-    box_weight: null,
-    box_width: null,
-    box_length: null,
+    mass: null,
     set(str, value){
       return this[str] = value;
     },
     clearProperties(){
       this['height'] = null;
       this['gravity'] = null;
-      this['box_width'] = null;
-      this['box_length'] = null;
-      this['box_weight'] = null;
+      this['mass'] = null;
       $('#height').val("")
       $('#gravity').val("")
-      $('#box_width').val("")
-      $('#box_length').val("")
-      $('#box_weight').val("")
+      $('#mass').val("")
     },
     get(str){
       return this[str];
@@ -97,14 +88,8 @@ $('document').ready(()=>{
       }
     },
     init(){
-      $('#box_width').on('change', ()=>{
-        this.set('box_width', this.validateNumber($('#box_width').val()));
-      });
-      $('#box_length').on('change', ()=>{
-        this.set('box_length', this.validateNumber($('#box_length').val()));
-      });
-      $('#box_weight').on('change', ()=>{
-        this.set('box_weight', this.validateNumber($('#box_weight').val()));
+      $('#mass').on('change', ()=>{
+        this.set('mass', this.validateNumber($('#mass').val()));
       });
       $('#gravity').on('change', ()=>{
         this.set('gravity', this.validateNumber($('#gravity').val(), true));
@@ -124,10 +109,10 @@ $('document').ready(()=>{
       $("#velocity").html(this.velocity().toFixed(2));
     },
     energy(){
-      return (parseFloat((1/2)) * parseFloat(view.get('box_weight')) * parseFloat(view.get('gravity') * 10));
+      return (parseFloat((1/2)) * parseFloat(view.get('mass')) * parseFloat(view.get('gravity') * 10));
     },
     impactForce(){
-      return (parseFloat(view.get('box_weight')) * (parseFloat(view.get('gravity')) * 10) * parseFloat(view.get('height')));
+      return (parseFloat(view.get('mass')) * (parseFloat(view.get('gravity')) * 10) * parseFloat(view.get('height')));
     },
     timeUntilImpact(){
       return Math.sqrt(2 * parseFloat(view.get('height')) / (parseFloat(view.get('gravity')) * 10));
@@ -284,34 +269,13 @@ $('document').ready(()=>{
   };
 
   Point.prototype.draw = function(ctx, size) {
-    ctx.fillStyle = 'rgba(255,255,255, 0.4)';
     ctx.beginPath();
-    ctx.arc(this.pos.x, this.pos.y, size * 1, 0, PI_TIMES_TWO, false);
+    ctx.arc(this.pos.x, this.pos.y, size * 20, 0, PI_TIMES_TWO, false);
+    ctx.fillStyle = 'rgb(255,255,255)';
     ctx.fill();
-  };
-
-  let Constraint = function(point_one, point_two) {
-    this.point_one = point_one;
-    this.point_two = point_two;
-    this.length = point_one.pos.distance(point_two.pos);
-  };
-
-  Constraint.prototype.resolve = function() {
-    let distance = Vector.subtract(this.point_two.pos, this.point_one.pos);
-    let length = distance.length();
-    let difference = length - this.length;
-    distance.normalize();
-    let frame = distance.multiply(difference * 0.5);
-    this.point_one.move(frame);
-    this.point_two.move(frame.negative())
-  };
-
-  Constraint.prototype.draw = function(ctx) {
     ctx.strokeStyle = 'rgb(255,255,255)';
-    ctx.beginPath();
-    ctx.moveTo(this.point_one.pos.x, this.point_one.pos.y);
-    ctx.lineTo(this.point_two.pos.x, this.point_one.pos.y);
     ctx.stroke();
+    ctx.lineWidth = 5;
   };
 
   let Animation = function(canvas, gravity) {
@@ -320,7 +284,6 @@ $('document').ready(()=>{
     this.ctx.lineWidth = 1;
     this.width = canvas.width;
     this.height = canvas.height;
-    this.constraints = [];
     this.points = [];
     this.gravity = new Vector(0, gravity) || new Vector(0, 0.981);
     this.point_size = 2;
@@ -328,12 +291,6 @@ $('document').ready(()=>{
 
   Animation.prototype.draw = function(ctx) {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    let i = this.constraints.length;
-    while(i--){
-      this.constraints[i].draw(ctx);
-    }
-
     let n = this.points.length;
     while(n--){
       this.points[n].draw(ctx, this.point_size);
@@ -352,32 +309,16 @@ $('document').ready(()=>{
         point.update(delta);
         point.edge(0, 0, this.width, this.height);
       }
-      let k = this.constraints.length;
-      while(k--){
-        this.constraints[k].resolve();
-      }
     }
   };
 
   Animation.prototype.addFrame = function(shapes) {
     this.points = this.points.concat(shapes.points);
-    this.constraints = this.constraints.concat(shapes.constraints);
   };
 
-  let Rectangle = function(x, y, width, height) {
+  let Shape = function(x, y) {
     this.points = [
-      new Point(x, y),
-      new Point(x + width, y),
-      new Point(x, y + height),
-      new Point(x + width, y + height)
-    ];
-    this.constraints = [
-      new Constraint(this.points[0], this.points[1]),
-      new Constraint(this.points[1], this.points[2]),
-      new Constraint(this.points[2], this.points[3]),
-      new Constraint(this.points[3], this.points[0]),
-      new Constraint(this.points[0], this.points[2]),
-      new Constraint(this.points[1], this.points[3])
+      new Point(x, y)      
     ];
   };
 
