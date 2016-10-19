@@ -1,7 +1,6 @@
 $('document').ready(()=>{
   const PI_TIMES_TWO = Math.PI * 2;
-  window.requestAnimFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback){window.setTimeout(callback, 1000 / 60);};
-
+  window.requestAnimFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame;
   let app = {
     init(){
       $('#run').on('click', (e)=>{
@@ -12,6 +11,15 @@ $('document').ready(()=>{
       });
     },
     render(){
+      let inputs = $('input')
+      inputs.toArray().forEach((input)=>{
+        if(!input.value){
+          $(`#${input.id}`).addClass('border-warn')
+          return;
+        } else {
+          $(`#${input.id}`).removeClass('border-warn')
+        }
+      });
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = 1500;
@@ -22,7 +30,7 @@ $('document').ready(()=>{
       let animation = new Animation(canvas, view.get('gravity'));
       animation.addFrame(new Rectangle((750 - width), width, length, width));
       let Run = function() {
-        animation.update();
+        animation.update(16);
         animation.draw(ctx);
         requestAnimFrame(Run);
       };
@@ -31,9 +39,13 @@ $('document').ready(()=>{
       $('#results').removeClass('hidden');
     },
     destroy(){
+      let inputs = $('input')
+      inputs.toArray().forEach((input)=>{
+        $(`#${input.id}`).removeClass('border-warn');
+      });
       const canvas = document.getElementById('canvas');
-      canvas.width = 1000;
-      canvas.height = 1000;
+      canvas.width = 1500;
+      canvas.height = 1500;
       view.clearProperties();
       const ctx = canvas.getContext('2d');
       let animation = new Animation(canvas);
@@ -252,19 +264,15 @@ $('document').ready(()=>{
   };
 
   Point.prototype.update = function(delta) {
-    if(this.fixed) {
-      return;
-    } else {
-      delta *= delta;
-      let x = this.pos.x;
-      let y = this.pos.y;
-      this.acc.multiply(delta);
-      this.pos.x += x - this.pre.x + this.acc.x;
-      this.pos.y += y - this.pre.y + this.acc.y;
-      this.acc.reset();
-      this.pre.x = x;
-      this.pre.y = y;
-    }
+    delta *= delta;
+    let x = this.pos.x;
+    let y = this.pos.y;
+    this.acc.multiply(delta);
+    this.pos.x += x - this.pre.x + this.acc.x;
+    this.pos.y += y - this.pre.y + this.acc.y;
+    this.acc.reset();
+    this.pre.x = x;
+    this.pre.y = y;
   };
 
   Point.prototype.edge = function(x, y, width, height) {
@@ -286,7 +294,6 @@ $('document').ready(()=>{
     this.point_one = point_one;
     this.point_two = point_two;
     this.length = point_one.pos.distance(point_two.pos);
-    this.stretch = this.length * 0.15;
   };
 
   Constraint.prototype.resolve = function() {
@@ -296,6 +303,7 @@ $('document').ready(()=>{
     distance.normalize();
     let frame = distance.multiply(difference * 0.5);
     this.point_one.move(frame);
+    this.point_two.move(frame.negative())
   };
 
   Constraint.prototype.draw = function(ctx) {
@@ -315,32 +323,38 @@ $('document').ready(()=>{
     this.constraints = [];
     this.points = [];
     this.gravity = new Vector(0, gravity) || new Vector(0, 0.981);
-    this.point_size = 5;
+    this.point_size = 2;
   };
 
   Animation.prototype.draw = function(ctx) {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    let i = this.points.length;
+
+    let i = this.constraints.length;
     while(i--){
-      this.points[i].draw(ctx, this.point_size);
+      this.constraints[i].draw(ctx);
+    }
+
+    let n = this.points.length;
+    while(n--){
+      this.points[n].draw(ctx, this.point_size);
     }
   };
 
-  Animation.prototype.update = function() {
-    const iter = 100;
-    var delta = 1 / iter;
+  Animation.prototype.update = function(iter) {
+    iter = iter || 6;
+    let delta = 1 / iter;
     let n = iter;
     while(n--) {
       let i = this.points.length;
       while(i--) {
-        var point = this.points[i];
+        let point = this.points[i];
         point.force(this.gravity);
         point.update(delta);
         point.edge(0, 0, this.width, this.height);
       }
-      i = this.constraints.length;
-      while(i--){
-        this.constraints[i].resolve();
+      let k = this.constraints.length;
+      while(k--){
+        this.constraints[k].resolve();
       }
     }
   };

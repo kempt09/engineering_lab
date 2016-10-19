@@ -28,6 +28,10 @@ body {
   border-radius: 1px;
 }
 
+.border-warn {
+  border: 3px solid red;
+}
+
 #top {
   position: absolute;
   width: 100%;
