@@ -14,10 +14,9 @@ $('document').ready(()=>{
       let inputs = $('input')
       inputs.toArray().forEach((input)=>{
         if(!input.value){
-          $(`#${input.id}`).addClass('border-warn')
-          return;
+          return $(`#${input.id}`).addClass('border-warn');
         } else {
-          $(`#${input.id}`).removeClass('border-warn')
+          $(`#${input.id}`).removeClass('border-warn');
         }
       });
       const canvas = document.getElementById('canvas');
@@ -26,14 +25,14 @@ $('document').ready(()=>{
       canvas.height = 1500;
       let animation = new Animation(canvas, view.get('gravity'));
       animation.addFrame(new Shape((canvas.width / 2), 50));
-      let Run = function() {
+      let run = function() {
         animation.update(60);
         animation.draw(ctx);
-        requestAnimFrame(Run);
+        requestAnimFrame(run);
       };
-      calculate.write();
-      Run();
       $('#results').removeClass('hidden');
+      calculate.write();
+      run();
     },
     destroy(){
       let inputs = $('input')
@@ -46,7 +45,7 @@ $('document').ready(()=>{
       view.clearProperties();
       const ctx = canvas.getContext('2d');
       let animation = new Animation(canvas);
-      animation.addFrame(new Shape());
+      animation.addFrame(new Shape(-100 ,-100));
       let Run = function() {
         animation.draw(ctx);
         requestAnimFrame(Run);
@@ -127,49 +126,6 @@ $('document').ready(()=>{
     this.y = y || 0;
   };
 
-  Vector.add = function(a,b) {
-    if (b.x != null && b.y != null) {
-      return new Vector(a.x + b.x, a.y + b.y);
-    } else {
-      return new Vector(a.x + b, a.y + b);
-    }
-  };
-
-  Vector.subtract = function(a, b) {
-    if (b.x != null && b.y != null) {
-      return new Vector(a.x - b.x, a.y - b.y);
-    } else {
-      return new Vector(a.x - b, a.y - b);
-    }
-  };
-
-  Vector.multiply = function(a, b) {
-    if (b.x != null && b.y != null) {
-      return new Vector(a.x * b.x, a.y * b.y);
-    } else {
-      return new Vector(a.x * b, a.y * b);
-    }
-  };
-
-  Vector.divide = function(a, b) {
-    if (b.x != null && b.y != null) {
-      return new Vector(a.x / b.x, a.y / b.y);
-    } else {
-      return new Vector(a.x / b, a.y / b);
-    }
-  };
-
-  Vector.prototype.subtract = function(vector) {
-    if (vector.x != null && vector.y != null) {
-      this.x -= vector.x;
-      this.y -= vector.y;
-    } else {
-      this.x -= vector;
-      this.y -= vector;
-    }
-    return this;
-  };
-
   Vector.prototype.add = function(vector) {
     if(vector.x != null && vector.y != null) {
       this.x += vector.x;
@@ -192,34 +148,8 @@ $('document').ready(()=>{
     return this;
   };
 
-  Vector.prototype.divide = function(vector) {
-    if (vector.x != null && vector.y != null) {
-      this.x /= vector.x;
-      this.y /= vector.y;
-    } else {
-      this.x /= v;
-      this.y /= v;
-    }
-    return this;
-  };
-
-  Vector.prototype.normalize = function() {
-    let length = this.length();
-    if (length > 0) {
-      this.x /= length;
-      this.y /= length;
-    }
-    return this;
-  };
-
   Vector.prototype.length = function() {
     return Math.sqrt(this.x * this.x + this.y * this.y);
-  };
-
-  Vector.prototype.distance = function(vector) {
-    let x = this.x - vector.x;
-    let y = this.y - vector.y;
-    return Math.sqrt(x * x + y * y);
   };
 
   Vector.prototype.reset = function() {
@@ -228,49 +158,39 @@ $('document').ready(()=>{
     return this;
   };
 
-  Vector.prototype.negative = function() {
-    this.x *= -1;
-    this.y *= -1;
-    return this;
-  };
-
   let Point = function(x, y){
-    this.pos = new Vector(x, y);
-    this.pre = new Vector(x, y);
-    this.acc = new Vector();
-  };
-
-  Point.prototype.move = function(vector) {
-    this.pos.add(vector);
+    this.position = new Vector(x, y);
+    this.previous = new Vector(x, y);
+    this.acceleration = new Vector();
   };
 
   Point.prototype.force = function(vector) {
-    this.acc.add(vector);
+    this.acceleration.add(vector);
   };
 
   Point.prototype.update = function(delta) {
     delta *= delta;
-    let x = this.pos.x;
-    let y = this.pos.y;
-    this.acc.multiply(delta);
-    this.pos.x += x - this.pre.x + this.acc.x;
-    this.pos.y += y - this.pre.y + this.acc.y;
-    this.acc.reset();
-    this.pre.x = x;
-    this.pre.y = y;
+    let x = this.position.x;
+    let y = this.position.y;
+    this.acceleration.multiply(delta);
+    this.previous.x += x - this.previous.x + this.acceleration.x;
+    this.position.y += y - this.previous.y + this.acceleration.y;
+    this.acceleration.reset();
+    this.previous.x = x;
+    this.previous.y = y;
   };
 
   Point.prototype.edge = function(x, y, width, height) {
-    this.pos.x = Math.max(x + 1, Math.min(width - 1, this.pos.x));
-    this.pos.y = Math.max(y + 1, Math.min(height - 1, this.pos.y));
-    if (this.pos.y >= height - 1){
-      this.pos.x -= (this.pos.x - this.pre.x + this.acc.x);
+    this.position.x = Math.max(x + 1, Math.min(width - 1, this.position.x));
+    this.position.y = Math.max(y + 1, Math.min(height - 1, this.position.y));
+    if (this.position.y >= height - 1){
+      this.position.x -= (this.position.x - this.previous.x + this.acceleration.x);
     }
   };
 
   Point.prototype.draw = function(ctx, size) {
     ctx.beginPath();
-    ctx.arc(this.pos.x, this.pos.y, size * 20, 0, PI_TIMES_TWO, false);
+    ctx.arc(this.position.x, this.position.y, size * 20, 0, PI_TIMES_TWO, false);
     ctx.fillStyle = 'rgb(255,255,255)';
     ctx.fill();
     ctx.strokeStyle = 'rgb(255,255,255)';
@@ -318,7 +238,7 @@ $('document').ready(()=>{
 
   let Shape = function(x, y) {
     this.points = [
-      new Point(x, y)      
+      new Point(x, y)
     ];
   };
 
