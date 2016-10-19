@@ -16,16 +16,12 @@
       <hr>
       <div class="row">
         <div class="col-xs-4">
-          <h4 class="text-white">Environment Properties</h4>
+          <h4 class="text-white">Properties</h4>
           <input id="height" placeholder="Height (m)" type="text" value="" class="input-form top">
           <br>
           <input id="gravity" placeholder="Gravity (m/s)" type="text" value="" class="input-form top">
-          <h4 class="text-white">Object Properties</h4>
-          <input id="box_length" placeholder="Length (m)" type="text" value="" class="input-form top">
           <br>
-          <input id="box_width" placeholder="Width (m)" type="text" value="" class="input-form top">
-          <br>
-          <input id="box_weight" placeholder="Weight (kg)" type="text" value="" class="input-form top">
+          <input id="mass" placeholder="Mass (kg)" type="text" value="" class="input-form top">
           <br>
           <button id="run" class="btn btn-primary top">Run</button>
           <button id="clear" class="btn btn-danger top">Clear</button>
@@ -33,10 +29,10 @@
         <div class="col-xs-6"></div>
         <div class="col-xs-2 text-left">
           <div id="results" class="hidden">
-            <h4 class="text-white">Energy: <span id="energy"></span> J</h4>
-            <h4 class="text-white">Force: <span id="force"></span> N</h4>
-            <h4 class="text-white">Velocity: <span id="velocity"></span> m/s</h4>
-            <h4 class="text-white">Time: <span id="time"></span> s</h4>
+            <h4 class="text-white">Energy on Impact: <span id="energy"></span> J</h4>
+            <h4 class="text-white">Impact Force: <span id="force"></span> N</h4>
+            <h4 class="text-white">Final Velocity: <span id="velocity"></span> m/s</h4>
+            <h4 class="text-white">Time Elapsed: <span id="time"></span> s</h4>
           </div>
         </div>
       </div>
