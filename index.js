@@ -104,14 +104,18 @@ $('document').ready(()=>{
     write(){
       $("#energy").html(this.energy().toFixed(2));
       $("#force").html(this.impactForce().toFixed(2));
+      $('#potential-energy').html(this.potentialEnergyOfGravity().toFixed(2))
       $("#time").html(this.timeUntilImpact().toFixed(2));
       $("#velocity").html(this.velocity().toFixed(2));
     },
     energy(){
-      return (parseFloat((1/2)) * parseFloat(view.get('mass')) * parseFloat(view.get('gravity') * 10));
+      return (parseFloat((1/2)) * parseFloat(view.get('mass')) * Math.pow(parseFloat(view.get('gravity') * 10), 2));
+    },
+    potentialEnergyOfGravity(){
+      return (parseFloat(view.get('mass')) * (parseFloat(view.get('gravity')) * 10) * parseFloat(view.get('height')));
     },
     impactForce(){
-      return (parseFloat(view.get('mass')) * (parseFloat(view.get('gravity')) * 10) * parseFloat(view.get('height')));
+      return (parseFloat(view.get('mass')) * (parseFloat(view.get('gravity')) * 10));
     },
     timeUntilImpact(){
       return Math.sqrt(2 * parseFloat(view.get('height')) / (parseFloat(view.get('gravity')) * 10));
